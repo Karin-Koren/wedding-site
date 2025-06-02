@@ -1,67 +1,184 @@
-import { useState } from 'react';
+import { getDownloadURL, getStorage, listAll, ref } from 'firebase/storage';
+import React, { useEffect, useState } from 'react';
+import './Gallery.css';
 
-// Temporary mock data for demonstration
-const mockPhotos = [
-  { id: 1, url: 'https://picsum.photos/400/300?random=1', caption: 'First Dance' },
-  { id: 2, url: 'https://picsum.photos/400/300?random=2', caption: 'Cutting the Cake' },
-  { id: 3, url: 'https://picsum.photos/400/300?random=3', caption: 'Family Photo' },
-  { id: 4, url: 'https://picsum.photos/400/300?random=4', caption: 'Dancing' },
-  { id: 5, url: 'https://picsum.photos/400/300?random=5', caption: 'Toast' },
-  { id: 6, url: 'https://picsum.photos/400/300?random=6', caption: 'Bouquet Toss' },
-];
+const Gallery = () => {
+  const [images, setImages] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
-export default function Gallery() {
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const storage = getStorage();
+        const listRef = ref(storage, 'uploads');
+        const res = await listAll(listRef);
+        
+        const imagePromises = res.items.map(async (itemRef) => {
+          const url = await getDownloadURL(itemRef);
+          return {
+            url,
+            name: itemRef.name
+          };
+        });
+
+        const imageList = await Promise.all(imagePromises);
+        setImages(imageList);
+      } catch (err) {
+        console.error('Error fetching images:', err);
+        setError('Failed to load images. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, []);
+
+  const toggleImageSelection = (image) => {
+    if (!isSelectionMode) {
+      setSelectedImage(image);
+      return;
+    }
+
+    setSelectedImages(prev => {
+      if (prev.find(img => img.url === image.url)) {
+        return prev.filter(img => img.url !== image.url);
+      } else {
+        return [...prev, image];
+      }
+    });
+  };
+
+  const downloadSelectedImages = async () => {
+    if (selectedImages.length === 0) return;
+
+    for (const image of selectedImages) {
+      try {
+        const response = await fetch(image.url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = image.name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (err) {
+        console.error('Error downloading image:', err);
+        setError('Failed to download some images. Please try again.');
+      }
+    }
+  };
+
+  const downloadSingleImage = async (image) => {
+    try {
+      const response = await fetch(image.url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = image.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading image:', err);
+      setError('Failed to download image. Please try again.');
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (!isSelectionMode) {
+      setSelectedImages([]);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="gallery-page">
+        <div className="gallery-content">
+          <h1>Loading Gallery...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="gallery-page">
+        <div className="gallery-content">
+          <h1>Error</h1>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
-      <h1 className="text-3xl font-bold text-primary-600 mb-8 text-center">
-        Wedding Gallery
-      </h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {mockPhotos.map((photo) => (
-          <div
-            key={photo.id}
-            className="relative group cursor-pointer"
-            onClick={() => setSelectedPhoto(photo)}
+    <div className="gallery-page">
+      <div className="gallery-content">
+        <h1>Wedding Gallery</h1>
+        <div className="gallery-actions">
+          <button 
+            className={`mode-button ${isSelectionMode ? 'active' : ''}`}
+            onClick={toggleSelectionMode}
           >
-            <img
-              src={photo.url}
-              alt={photo.caption}
-              className="w-full h-64 object-cover rounded-lg transition-transform group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
-              <p className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-center p-2">
-                {photo.caption}
-              </p>
+            {isSelectionMode ? 'Exit Selection Mode' : 'Select Multiple'}
+          </button>
+          {isSelectionMode && (
+            <button 
+              className="download-button"
+              onClick={downloadSelectedImages}
+              disabled={selectedImages.length === 0}
+            >
+              Download Selected ({selectedImages.length})
+            </button>
+          )}
+        </div>
+        <div className="gallery-grid">
+          {images.map((image, index) => (
+            <div 
+              key={index} 
+              className={`gallery-item ${selectedImages.find(img => img.url === image.url) ? 'selected' : ''}`}
+              onClick={() => toggleImageSelection(image)}
+            >
+              <img src={image.url} alt={`Wedding photo ${index + 1}`} />
+              {isSelectionMode && (
+                <div className="selection-overlay">
+                  <span className="checkmark">✓</span>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Modal for viewing full-size photos */}
-      {selectedPhoto && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <img
-              src={selectedPhoto.url}
-              alt={selectedPhoto.caption}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            />
-            <p className="text-white text-center mt-4">{selectedPhoto.caption}</p>
-            <button
-              className="absolute top-4 right-4 text-white text-2xl hover:text-primary-400"
-              onClick={() => setSelectedPhoto(null)}
-            >
-              ×
-            </button>
+      {/* Modal for full-size image view */}
+      {selectedImage && !isSelectionMode && (
+        <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedImage(null)}>×</button>
+            <img src={selectedImage.url} alt="Full size" />
+            <div className="modal-actions">
+              <button 
+                className="download-button"
+                onClick={() => downloadSingleImage(selectedImage)}
+              >
+                Download Image
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
-} 
+};
+
+export default Gallery; 

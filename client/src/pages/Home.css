@@ -1,29 +1,224 @@
+/* Color Variables */
+:root {
+  --sage-green: #B6C4A2;
+  --cream: #FFFDF4;
+  --light-sage: #D4E0C4;
+  --wood-brown: #A47551;
+  --text-dark: #4A4A4A;
+  --shadow-soft: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 6px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 12px;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+}
+
+/* Base Styles */
 .home-container {
   min-height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
-  background: white;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: var(--cream);
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-dark);
+}
+
+.hero-section {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  padding: 2rem;
+  max-width: 800px;
+}
+
+.hero-content h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-content p {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.cta-button {
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cta-button.primary {
+  background: #3498db;
+  color: white;
+}
+
+.cta-button.primary:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.cta-button.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+}
+
+.cta-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .hero-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero-content p {
+    font-size: 1.2rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+  }
+
+  .cta-button {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.photo-section {
+  width: 100vw;
+  height: 60vh;
+  position: relative;
+  overflow: hidden;
+  margin: 0;
   padding: 0;
 }
 
-.content-wrapper {
+.main-photo {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  /* filter: grayscale(100%); */
+}
+
+.names-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5));
+  color: var(--cream);
+  text-align: center;
+  padding: 1rem;
+  padding-top: 5vh;
+}
+
+.names-overlay h2 {
+  font-size: 1.8rem;
+  margin: 0.3rem 0;
+  font-weight: 500;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+}
+
+.names-overlay .date-location {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.names-overlay .date-location p {
+  font-size: 1.5rem;
+  color: var(--cream);
   margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.content-wrapper {
+  width: 90%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1.5rem 0;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  gap: 1rem;
+  background: var(--cream);
+}
+
+.content-container {
+  width: 100%;
+  border: 1px solid var(--light-sage);
+  border-radius: 12px;
+  padding: 1.2rem;
+  background: white;
+  box-shadow: var(--shadow-soft);
+  margin-top: -2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .names {
-  margin-top: 20px;
-  padding: 0 20px;
+  margin-top: 1rem;
 }
 
 .names h2 {
-  font-size: 32px;
+  font-size: 2rem;
   color: #000000;
-  margin-bottom: 0px;
+  margin: 0.5rem 0;
+  font-weight: 500;
 }
 
 .names h1 {
@@ -32,90 +227,272 @@
   font-weight: bold;
 }
 
-.photo-section {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-.photo-section img {
-  width: 100%;
-  height: auto;
-  display: block;
-  margin: 0;
-  padding: 0;
-}
-
-.date-location {
-  margin: 20px 0;
-  padding: 0 20px;
-}
-
-.date-location p {
-  font-size: 24px;
-  color: #4b5563;
-  margin-bottom: 8px;
-}
-
 .message {
-  margin: 20px 0;
-  padding: 0 20px;
+  width: 100%;
+  margin: 0.5rem 0;
+  text-align: center;
 }
 
 .message p {
-  font-size: 20px;
-  color: #4b5563;
-  line-height: 1.5;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  line-height: 1.6;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
 .button-container {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0.8rem;
   justify-content: center;
-  margin-top: 20px;
+  align-items: center;
+  margin: 1.5rem auto 0;
 }
 
 .button {
-  padding: 16px 32px;
+  width: 100%;
+  padding: 0.8rem 1.5rem;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 1.1rem;
   font-weight: 500;
   text-decoration: none;
   transition: all 0.3s ease;
+  text-align: center;
+  letter-spacing: 0.5px;
 }
 
 .button-primary {
-  background-color: #db2777;
+  background-color: var(--sage-green);
   color: white;
 }
 
 .button-primary:hover {
-  background-color: #be185d;
+  background-color: #9BAF8D;
   transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
 }
 
 .button-secondary {
-  background-color: #e5e7eb;
-  color: #1f2937;
+  background-color: var(--light-sage);
+  color: var(--text-dark);
 }
 
 .button-secondary:hover {
-  background-color: #d1d5db;
+  background-color: #C5D5B5;
   transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
 }
 
 /* Responsive design */
-@media (min-width: 640px) {
+@media (max-width: 640px) {
+  .photo-section {
+    height: 50vh;
+  }
+
+  .names-overlay h2 {
+    font-size: 1.6rem;
+  }
+
+  .names-overlay .date-location p {
+    font-size: 1.3rem;
+  }
+
+  .content-container {
+    padding: 1rem;
+    margin-top: -1.5rem;
+  }
+
+  .button-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .button {
+    width: 100%;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+  }
+
+  .countdown-section {
+    padding: 1.5rem 0.5rem;
+  }
+
+  .countdown-title {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .countdown-container {
+    padding: 0 0.5rem;
+  }
+
+  .countdown-time {
+    gap: 1rem;
+  }
+
+  .countdown-item {
+    min-width: 50px;
+  }
+
+  .countdown-number {
+    font-size: 1.5rem;
+    min-width: 50px;
+  }
+
+  .countdown-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .photo-section {
+    height: 70vh;
+  }
+
+  .names-overlay h2 {
+    font-size: 2.5rem;
+  }
+
+  .content-container {
+    padding: 1.5rem;
+    margin-top: -3rem;
+  }
+
   .button-container {
     flex-direction: row;
+    gap: 1.5rem;
   }
-  
-  .names h1 {
-    font-size: 48px;
+
+  .button {
+    width: auto;
+    min-width: 180px;
   }
-  
-  .names h2 {
-    font-size: 48px;
+
+  .countdown-section {
+    padding: 3rem 1rem;
+  }
+
+  .countdown-title {
+    font-size: 2rem;
+  }
+
+  .countdown-time {
+    gap: 3rem;
+  }
+
+  .countdown-number {
+    font-size: 2.2rem;
+    min-width: 70px;
+  }
+
+  .countdown-label {
+    font-size: 1rem;
+  }
+}
+
+.countdown-section {
+  width: 100%;
+  padding: 2rem 1rem;
+  background: white;
+  text-align: center;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--light-sage), transparent);
+}
+
+.countdown-title {
+  font-size: 1.8rem;
+  color: var(--sage-green);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.countdown-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.countdown-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 60px;
+}
+
+.countdown-number {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--sage-green);
+  min-width: 60px;
+  transition: all 0.3s ease;
+}
+
+.countdown-label {
+  font-size: 0.9rem;
+  color: var(--sage-green);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive design for countdown */
+@media (max-width: 640px) {
+  .countdown-time {
+    gap: 1rem;
+  }
+
+  .countdown-item {
+    min-width: 50px;
+  }
+
+  .countdown-number {
+    font-size: 1.5rem;
+    min-width: 50px;
+  }
+
+  .countdown-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .countdown-time {
+    gap: 3rem;
+  }
+
+  .countdown-number {
+    font-size: 2.2rem;
+    min-width: 70px;
+  }
+
+  .countdown-label {
+    font-size: 1rem;
   }
 } 

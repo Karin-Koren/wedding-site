@@ -7,8 +7,6 @@ export default function Upload() {
   // State for form fields
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -72,11 +70,7 @@ export default function Upload() {
       
       // Create upload task with metadata
       const metadata = {
-        contentType: file.type,
-        customMetadata: {
-          'uploadedBy': name,
-          'message': message
-        }
+        contentType: file.type
       };
       
       const uploadTask = uploadBytesResumable(storageRef, file, metadata);
@@ -150,11 +144,6 @@ export default function Upload() {
       return;
     }
 
-    if (!name.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-
     setIsUploading(true);
 
     try {
@@ -162,7 +151,7 @@ export default function Upload() {
       const uploadPromises = selectedFiles.map((file, index) => uploadFile(file, index));
       const downloadURLs = await Promise.all(uploadPromises);
 
-      // TODO: Save metadata to Firestore (name, message, downloadURLs)
+      // TODO: Save metadata to Firestore (downloadURLs)
       console.log('Uploaded files:', downloadURLs);
       
       setSuccess('Files uploaded successfully!');
@@ -170,8 +159,6 @@ export default function Upload() {
       // Reset form
       setSelectedFiles([]);
       setPreviews([]);
-      setName('');
-      setMessage('');
       setUploadProgress({});
     } catch (err) {
       console.error('Upload error:', err);
@@ -259,34 +246,6 @@ export default function Upload() {
               ))}
             </div>
           )}
-
-          {/* Name Input */}
-          <div className="file-input-container">
-            <label className="file-input-label">
-              Your Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              className="form-input"
-            />
-          </div>
-
-          {/* Message Input */}
-          <div className="file-input-container">
-            <label className="file-input-label">
-              Message (Optional)
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Add a message with your files..."
-              rows="3"
-              className="form-input"
-            />
-          </div>
 
           {/* Error Message */}
           {error && (

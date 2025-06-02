@@ -1,0 +1,320 @@
+.gallery-page {
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: var(--cream);
+  font-family: 'Poppins', sans-serif;
+}
+
+.gallery-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-soft);
+}
+
+.gallery-content h1 {
+  font-size: 2rem;
+  color: var(--sage-green);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.gallery-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mode-button {
+  padding: 0.8rem 1.5rem;
+  background-color: var(--light-sage);
+  color: var(--text-dark);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-button:hover {
+  background-color: #C5D5B5;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.mode-button.active {
+  background-color: var(--sage-green);
+  color: white;
+}
+
+.download-button {
+  padding: 0.8rem 1.5rem;
+  background-color: var(--sage-green);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.download-button:hover:not(:disabled) {
+  background-color: #9BAF8D;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.download-button:disabled {
+  background-color: var(--light-sage);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.gallery-item {
+  position: relative;
+  aspect-ratio: auto;
+  height: 180px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-soft);
+  background: white;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  padding: 4px;
+}
+
+.gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+.selection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover .selection-overlay {
+  opacity: 1;
+}
+
+.gallery-item.selected .selection-overlay {
+  opacity: 1;
+  background: rgba(182, 196, 162, 0.4);
+}
+
+.checkmark {
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gallery-item.selected .checkmark {
+  opacity: 1;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  position: relative;
+  width: 95vw;
+  height: 95vh;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.modal-content img {
+  max-width: 95vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: calc(var(--border-radius) - 4px);
+  box-shadow: var(--shadow-medium);
+}
+
+.modal-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 3rem;
+  height: 3rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  font-size: 1.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-medium);
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.modal-close:hover {
+  transform: scale(1.1);
+  background: var(--light-sage);
+}
+
+.modal-actions {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 1001;
+}
+
+.modal-actions .download-button {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-dark);
+}
+
+.modal-actions .download-button:hover {
+  background: var(--sage-green);
+  color: white;
+}
+
+/* Loading and Error States */
+.gallery-content h1.loading,
+.gallery-content h1.error {
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+}
+
+.gallery-content p.error {
+  color: #ef4444;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .gallery-page {
+    padding: 1rem;
+  }
+
+  .gallery-content {
+    padding: 1rem;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .gallery-item {
+    height: 120px;
+  }
+
+  .gallery-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .download-button,
+  .mode-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+
+  .modal-content {
+    width: 100vw;
+    height: 100vh;
+    padding: 0.5rem;
+  }
+
+  .modal-content img {
+    max-width: 100vw;
+    max-height: 80vh;
+  }
+
+  .modal-close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+  }
+
+  .modal-actions {
+    bottom: 1rem;
+  }
+
+  .modal-actions .download-button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .gallery-item {
+    height: 100px;
+  }
+
+  .gallery-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal-close {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.2rem;
+  }
+
+  .modal-actions .download-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+} 
