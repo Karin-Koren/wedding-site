@@ -1,5 +1,6 @@
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { storage } from '../firebase';
 import './Upload.css';
 
@@ -264,11 +265,18 @@ export default function Upload() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={selectedFiles.length === 0 || isUploading}
             className="upload-button"
+            disabled={selectedFiles.length === 0 || isUploading}
           >
             {isUploading ? 'Uploading...' : 'Upload Files'}
           </button>
+
+          {/* View Gallery Button - Only shows after successful upload */}
+          {success && (
+            <Link to="/gallery" className="view-gallery-button">
+              View Gallery
+            </Link>
+          )}
         </form>
       </div>
     </div>

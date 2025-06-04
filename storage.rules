@@ -1,0 +1,12 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow read access to all files
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      // Only allow uploads of images and videos
+      allow write: if request.resource.contentType.matches('image/.*|video/.*')
+                  && request.resource.size < 20 * 1024 * 1024; // 20MB max
+    }
+  }
+} 

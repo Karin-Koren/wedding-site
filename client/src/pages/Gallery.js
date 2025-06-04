@@ -1,5 +1,6 @@
-import { getDownloadURL, getStorage, listAll, ref } from 'firebase/storage';
+import { getDownloadURL, listAll, ref } from 'firebase/storage';
 import React, { useEffect, useState } from 'react';
+import { storage } from '../firebase';
 import './Gallery.css';
 
 const Gallery = () => {
@@ -13,7 +14,6 @@ const Gallery = () => {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const storage = getStorage();
         const listRef = ref(storage, 'uploads');
         const res = await listAll(listRef);
         
@@ -21,11 +21,14 @@ const Gallery = () => {
           const url = await getDownloadURL(itemRef);
           return {
             url,
-            name: itemRef.name
+            name: itemRef.name,
+            timestamp: itemRef.timeCreated
           };
         });
 
         const imageList = await Promise.all(imagePromises);
+        // Sort by timestamp, newest first
+        imageList.sort((a, b) => b.timestamp - a.timestamp);
         setImages(imageList);
       } catch (err) {
         console.error('Error fetching images:', err);
@@ -149,7 +152,11 @@ const Gallery = () => {
               className={`gallery-item ${selectedImages.find(img => img.url === image.url) ? 'selected' : ''}`}
               onClick={() => toggleImageSelection(image)}
             >
-              <img src={image.url} alt={`Wedding photo ${index + 1}`} />
+              <img 
+                src={image.url} 
+                alt={`Wedding photo ${index + 1}`}
+                loading="lazy"
+              />
               {isSelectionMode && (
                 <div className="selection-overlay">
                   <span className="checkmark">✓</span>

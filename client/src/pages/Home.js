@@ -3,11 +3,18 @@ import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
+  const [timeLeft, setTimeLeft] = useState(() => {
+    // Initialize from localStorage if available
+    const saved = localStorage.getItem('countdownState');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0
+    };
   });
 
   useEffect(() => {
@@ -17,19 +24,28 @@ const Home = () => {
       const difference = weddingDate - new Date();
       
       if (difference > 0) {
-        setTimeLeft({
+        const newTimeLeft = {
           days: Math.floor(difference / (1000 * 60 * 60 * 24)),
           hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((difference / 1000 / 60) % 60),
           seconds: Math.floor((difference / 1000) % 60)
-        });
+        };
+        setTimeLeft(newTimeLeft);
+        // Save to localStorage
+        localStorage.setItem('countdownState', JSON.stringify(newTimeLeft));
       }
     };
 
+    // Calculate immediately
     calculateTimeLeft();
+    
+    // Set up interval
     const timer = setInterval(calculateTimeLeft, 1000);
 
-    return () => clearInterval(timer);
+    // Cleanup
+    return () => {
+      clearInterval(timer);
+    };
   }, []);
 
   return (
