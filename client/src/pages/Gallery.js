@@ -1,5 +1,5 @@
 import { getDownloadURL, listAll, ref } from 'firebase/storage';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { storage } from '../firebase';
 import './Gallery.css';
 
@@ -10,6 +10,11 @@ const Gallery = () => {
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -27,7 +32,6 @@ const Gallery = () => {
         });
 
         const imageList = await Promise.all(imagePromises);
-        // Sort by timestamp, newest first
         imageList.sort((a, b) => b.timestamp - a.timestamp);
         setImages(imageList);
       } catch (err) {
@@ -40,6 +44,63 @@ const Gallery = () => {
 
     fetchImages();
   }, []);
+
+  const navigateImage = useCallback((direction) => {
+    if (!selectedImage) return;
+    
+    const currentIndex = images.findIndex(img => img.url === selectedImage.url);
+    let newIndex;
+    
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % images.length;
+    } else {
+      newIndex = (currentIndex - 1 + images.length) % images.length;
+    }
+    
+    setSelectedImage(images[newIndex]);
+  }, [selectedImage, images]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (!selectedImage) return;
+    
+    if (e.key === 'ArrowLeft') {
+      navigateImage('prev');
+    } else if (e.key === 'ArrowRight') {
+      navigateImage('next');
+    } else if (e.key === 'Escape') {
+      setSelectedImage(null);
+    }
+  }, [selectedImage, navigateImage]);
+
+  useEffect(() => {
+    if (selectedImage) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [selectedImage, handleKeyDown]);
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      navigateImage('next');
+    } else if (isRightSwipe) {
+      navigateImage('prev');
+    }
+  };
 
   const toggleImageSelection = (image) => {
     if (!isSelectionMode) {
@@ -170,9 +231,37 @@ const Gallery = () => {
       {/* Modal for full-size image view */}
       {selectedImage && !isSelectionMode && (
         <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div 
+            className="modal-content" 
+            onClick={e => e.stopPropagation()}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
             <button className="modal-close" onClick={() => setSelectedImage(null)}>×</button>
+            
+            <button 
+              className="modal-nav-button modal-nav-prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigateImage('prev');
+              }}
+            >
+              ‹
+            </button>
+            
             <img src={selectedImage.url} alt="Full size" />
+            
+            <button 
+              className="modal-nav-button modal-nav-next"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigateImage('next');
+              }}
+            >
+              ›
+            </button>
+            
             <div className="modal-actions">
               <button 
                 className="download-button"

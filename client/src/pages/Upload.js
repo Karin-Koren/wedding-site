@@ -1,7 +1,9 @@
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import pLimit from 'p-limit';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { storage } from '../firebase';
+import { db, storage } from '../firebase';
 import './Upload.css';
 
 export default function Upload() {
@@ -12,6 +14,7 @@ export default function Upload() {
   const [success, setSuccess] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [fileStatuses, setFileStatuses] = useState([]);
 
   // Handle file selection
   const handleFileSelect = (event) => {
@@ -39,24 +42,40 @@ export default function Upload() {
 
     if (validFiles.length === 0) return;
 
-    setSelectedFiles(validFiles);
-    
-    // Create preview URLs
-    const newPreviews = validFiles.map(file => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({
-            url: reader.result,
-            type: file.type,
-            name: file.name
-          });
-        };
-        reader.readAsDataURL(file);
-      });
+    setSelectedFiles(prev => {
+      // Append new files, but filter out duplicates (by name and size)
+      const allFiles = [...prev, ...validFiles];
+      const uniqueFiles = [];
+      const seen = new Set();
+      for (const file of allFiles) {
+        const key = file.name + '_' + file.size;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueFiles.push(file);
+        }
+      }
+      return uniqueFiles;
     });
-
-    Promise.all(newPreviews).then(setPreviews);
+    
+    // Create preview URLs for all selected files (after deduplication)
+    setSelectedFiles(prev => {
+      const allFiles = prev;
+      const newPreviews = allFiles.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve({
+              url: reader.result,
+              type: file.type,
+              name: file.name
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      Promise.all(newPreviews).then(setPreviews);
+      return allFiles;
+    });
   };
 
   // Upload a single file to Firebase Storage
@@ -119,10 +138,18 @@ export default function Upload() {
             try {
               // Upload completed successfully
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              // Store metadata in Firestore
+              await addDoc(collection(db, 'uploads'), {
+                url: downloadURL,
+                filename: file.name,
+                uploadedAt: serverTimestamp(),
+                type: file.type,
+                size: file.size
+              });
               resolve(downloadURL);
             } catch (error) {
-              console.error('Error getting download URL:', error);
-              reject(new Error('Failed to get download URL. Please try again.'));
+              console.error('Error getting download URL or saving metadata:', error);
+              reject(new Error('Failed to get download URL or save metadata. Please try again.'));
             }
           }
         );
@@ -139,6 +166,7 @@ export default function Upload() {
     setError('');
     setSuccess('');
     setUploadProgress({});
+    setFileStatuses([]);
 
     if (selectedFiles.length === 0) {
       setError('Please select at least one file');
@@ -148,19 +176,31 @@ export default function Upload() {
     setIsUploading(true);
 
     try {
-      // Upload all files
-      const uploadPromises = selectedFiles.map((file, index) => uploadFile(file, index));
-      const downloadURLs = await Promise.all(uploadPromises);
+      const limit = pLimit(5); // Limit to 5 concurrent uploads
+      const uploadPromises = selectedFiles.map((file, index) =>
+        limit(() => uploadFile(file, index))
+      );
+      const results = await Promise.allSettled(uploadPromises);
 
-      // TODO: Save metadata to Firestore (downloadURLs)
-      console.log('Uploaded files:', downloadURLs);
-      
-      setSuccess('Files uploaded successfully!');
-      
-      // Reset form
-      setSelectedFiles([]);
-      setPreviews([]);
-      setUploadProgress({});
+      const newStatuses = results.map(result => {
+        if (result.status === 'fulfilled') {
+          return { status: 'success' };
+        } else {
+          return { status: 'error', message: result.reason?.message || 'Upload failed' };
+        }
+      });
+      setFileStatuses(newStatuses);
+
+      const allSuccess = newStatuses.every(s => s.status === 'success');
+      if (allSuccess) {
+        setSuccess('Files uploaded successfully!');
+        // Reset form
+        setSelectedFiles([]);
+        setPreviews([]);
+        setUploadProgress({});
+      } else {
+        setError('Some files failed to upload.');
+      }
     } catch (err) {
       console.error('Upload error:', err);
       setError(err.message || 'Failed to upload files. Please try again.');
@@ -178,6 +218,7 @@ export default function Upload() {
       delete newProgress[index];
       return newProgress;
     });
+    setFileStatuses(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -242,6 +283,13 @@ export default function Upload() {
                         {Math.round(uploadProgress[index])}%
                       </span>
                     </div>
+                  )}
+                  {/* Per-file status */}
+                  {fileStatuses[index]?.status === 'success' && (
+                    <span className="success-text">Uploaded!</span>
+                  )}
+                  {fileStatuses[index]?.status === 'error' && (
+                    <span className="error-text">{fileStatuses[index].message}</span>
                   )}
                 </div>
               ))}
