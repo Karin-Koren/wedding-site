@@ -1,3 +1,4 @@
+import imageCompression from 'browser-image-compression';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import pLimit from 'p-limit';
@@ -93,13 +94,13 @@ export default function Upload() {
         contentType: file.type
       };
       
+      // Upload original file
       const uploadTask = uploadBytesResumable(storageRef, file, metadata);
-
-      return new Promise((resolve, reject) => {
+      // Wait for upload to complete
+      await new Promise((resolve, reject) => {
         uploadTask.on(
           'state_changed',
           (snapshot) => {
-            // Calculate and update progress
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             setUploadProgress(prev => ({
               ...prev,
@@ -107,9 +108,7 @@ export default function Upload() {
             }));
           },
           (error) => {
-            // Handle specific error cases
             let errorMessage = 'Upload failed. Please try again.';
-            
             switch (error.code) {
               case 'storage/unauthorized':
                 errorMessage = 'You are not authorized to upload files.';
@@ -130,30 +129,42 @@ export default function Upload() {
                 errorMessage = 'CORS error. Please try again or contact support.';
                 break;
             }
-            
             console.error('Upload error:', error);
             reject(new Error(errorMessage));
           },
-          async () => {
-            try {
-              // Upload completed successfully
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              // Store metadata in Firestore
-              await addDoc(collection(db, 'uploads'), {
-                url: downloadURL,
-                filename: file.name,
-                uploadedAt: serverTimestamp(),
-                type: file.type,
-                size: file.size
-              });
-              resolve(downloadURL);
-            } catch (error) {
-              console.error('Error getting download URL or saving metadata:', error);
-              reject(new Error('Failed to get download URL or save metadata. Please try again.'));
-            }
-          }
+          () => resolve()
         );
       });
+      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      let thumbURL = null;
+      // If image, generate and upload thumbnail
+      if (file.type.startsWith('image/')) {
+        const options = {
+          maxWidthOrHeight: 300,
+          useWebWorker: true,
+          initialQuality: 0.7
+        };
+        const compressedFile = await imageCompression(file, options);
+        const thumbName = `${timestamp}_thumb_${file.name}`;
+        const thumbRef = ref(storage, `thumbnails/${thumbName}`);
+        const thumbTask = uploadBytesResumable(thumbRef, compressedFile, {
+          contentType: file.type
+        });
+        await new Promise((resolve, reject) => {
+          thumbTask.on('state_changed', null, reject, resolve);
+        });
+        thumbURL = await getDownloadURL(thumbRef);
+      }
+      // Store metadata in Firestore
+      await addDoc(collection(db, 'uploads'), {
+        fullUrl: downloadURL,
+        thumbUrl: thumbURL,
+        filename: file.name,
+        uploadedAt: serverTimestamp(),
+        type: file.type,
+        size: file.size
+      });
+      return downloadURL;
     } catch (error) {
       console.error('Upload setup error:', error);
       throw new Error('Failed to start upload. Please try again.');

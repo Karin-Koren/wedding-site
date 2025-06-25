@@ -1,6 +1,4 @@
-import { getDownloadURL, listAll, ref } from 'firebase/storage';
 import React, { useCallback, useEffect, useState } from 'react';
-import { storage } from '../firebase';
 import './Gallery.css';
 
 const Gallery = () => {
@@ -8,7 +6,7 @@ const Gallery = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -19,20 +17,11 @@ const Gallery = () => {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const listRef = ref(storage, 'uploads');
-        const res = await listAll(listRef);
-        
-        const imagePromises = res.items.map(async (itemRef) => {
-          const url = await getDownloadURL(itemRef);
-          return {
-            url,
-            name: itemRef.name,
-            timestamp: itemRef.timeCreated
-          };
-        });
-
-        const imageList = await Promise.all(imagePromises);
-        imageList.sort((a, b) => b.timestamp - a.timestamp);
+        // Fetch from Firestore instead of Storage
+        // (Assume you have a Firestore collection 'uploads' with fullUrl and thumbUrl)
+        const snapshot = await import('../firebase').then(({ db }) => import('firebase/firestore').then(firestore => firestore.getDocs(firestore.collection(db, 'uploads'))));
+        const imageList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        imageList.sort((a, b) => (b.uploadedAt?.seconds || 0) - (a.uploadedAt?.seconds || 0));
         setImages(imageList);
       } catch (err) {
         console.error('Error fetching images:', err);
@@ -41,43 +30,43 @@ const Gallery = () => {
         setLoading(false);
       }
     };
-
     fetchImages();
   }, []);
 
-  const navigateImage = useCallback((direction) => {
-    if (!selectedImage) return;
-    
-    const currentIndex = images.findIndex(img => img.url === selectedImage.url);
-    let newIndex;
-    
-    if (direction === 'next') {
-      newIndex = (currentIndex + 1) % images.length;
-    } else {
-      newIndex = (currentIndex - 1 + images.length) % images.length;
+  const openImageModal = (index) => {
+    setSelectedImageIndex(index);
+  };
+
+  const closeModal = () => {
+    setSelectedImageIndex(null);
+  };
+
+  const navigateImage = (direction) => {
+    if (selectedImageIndex === null) return;
+    if (direction === 'next' && selectedImageIndex < images.length - 1) {
+      setSelectedImageIndex(selectedImageIndex + 1);
+    } else if (direction === 'prev' && selectedImageIndex > 0) {
+      setSelectedImageIndex(selectedImageIndex - 1);
     }
-    
-    setSelectedImage(images[newIndex]);
-  }, [selectedImage, images]);
+  };
 
   const handleKeyDown = useCallback((e) => {
-    if (!selectedImage) return;
-    
+    if (selectedImageIndex === null) return;
     if (e.key === 'ArrowLeft') {
       navigateImage('prev');
     } else if (e.key === 'ArrowRight') {
       navigateImage('next');
     } else if (e.key === 'Escape') {
-      setSelectedImage(null);
+      closeModal();
     }
-  }, [selectedImage, navigateImage]);
+  }, [selectedImageIndex, navigateImage]);
 
   useEffect(() => {
-    if (selectedImage) {
+    if (selectedImageIndex !== null) {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [selectedImage, handleKeyDown]);
+  }, [selectedImageIndex, handleKeyDown]);
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -104,7 +93,7 @@ const Gallery = () => {
 
   const toggleImageSelection = (image) => {
     if (!isSelectionMode) {
-      setSelectedImage(image);
+      setSelectedImageIndex(images.findIndex(img => img.url === image.url));
       return;
     }
 
@@ -119,18 +108,18 @@ const Gallery = () => {
 
   const downloadSelectedImages = async () => {
     if (selectedImages.length === 0) return;
-
     for (const image of selectedImages) {
       try {
-        const response = await fetch(image.url);
+        const url = image.fullUrl || image.url;
+        const response = await fetch(url);
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = image.name;
+        a.href = downloadUrl;
+        a.download = image.filename || image.name;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(downloadUrl);
         document.body.removeChild(a);
       } catch (err) {
         console.error('Error downloading image:', err);
@@ -141,15 +130,16 @@ const Gallery = () => {
 
   const downloadSingleImage = async (image) => {
     try {
-      const response = await fetch(image.url);
+      const url = image.fullUrl || image.url;
+      const response = await fetch(url);
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = image.name;
+      a.href = downloadUrl;
+      a.download = image.filename || image.name;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
     } catch (err) {
       console.error('Error downloading image:', err);
@@ -208,13 +198,13 @@ const Gallery = () => {
         </div>
         <div className="gallery-grid">
           {images.map((image, index) => (
-            <div 
-              key={index} 
-              className={`gallery-item ${selectedImages.find(img => img.url === image.url) ? 'selected' : ''}`}
-              onClick={() => toggleImageSelection(image)}
+            <div
+              key={index}
+              className={`gallery-item ${selectedImages.find(img => (img.fullUrl || img.url) === (image.fullUrl || image.url)) ? 'selected' : ''}`}
+              onClick={() => isSelectionMode ? toggleImageSelection(image) : openImageModal(index)}
             >
-              <img 
-                src={image.url} 
+              <img
+                src={image.thumbUrl || image.url}
                 alt={`Wedding photo ${index + 1}`}
                 loading="lazy"
               />
@@ -229,43 +219,41 @@ const Gallery = () => {
       </div>
 
       {/* Modal for full-size image view */}
-      {selectedImage && !isSelectionMode && (
-        <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
-          <div 
-            className="modal-content" 
+      {selectedImageIndex !== null && !isSelectionMode && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div
+            className="modal-content"
             onClick={e => e.stopPropagation()}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <button className="modal-close" onClick={() => setSelectedImage(null)}>×</button>
-            
-            <button 
-              className="modal-nav-button modal-nav-prev"
-              onClick={(e) => {
+            <button className="modal-close" onClick={closeModal}>×</button>
+            <button
+              className={`modal-nav-button modal-nav-prev${selectedImageIndex === 0 ? ' disabled' : ''}`}
+              onClick={e => {
                 e.stopPropagation();
                 navigateImage('prev');
               }}
+              disabled={selectedImageIndex === 0}
             >
               ‹
             </button>
-            
-            <img src={selectedImage.url} alt="Full size" />
-            
-            <button 
-              className="modal-nav-button modal-nav-next"
-              onClick={(e) => {
+            <img src={images[selectedImageIndex].fullUrl || images[selectedImageIndex].url} alt="Full size" />
+            <button
+              className={`modal-nav-button modal-nav-next${selectedImageIndex === images.length - 1 ? ' disabled' : ''}`}
+              onClick={e => {
                 e.stopPropagation();
                 navigateImage('next');
               }}
+              disabled={selectedImageIndex === images.length - 1}
             >
               ›
             </button>
-            
             <div className="modal-actions">
-              <button 
+              <button
                 className="download-button"
-                onClick={() => downloadSingleImage(selectedImage)}
+                onClick={() => downloadSingleImage(images[selectedImageIndex])}
               >
                 Download Image
               </button>
