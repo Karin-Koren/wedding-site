@@ -380,18 +380,30 @@ const Gallery = () => {
 
       // Convert HEIC/HEIF to JPEG if needed
       let referenceFile = file;
-      if (file.type === 'image/heic' || file.type === 'image/heif') {
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.9
-        });
-        referenceFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        referenceFile = new File([referenceFile], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' });
+      console.log('Original file type:', file.type, 'Original file name:', file.name);
+      
+      if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        console.log('Converting HEIC/HEIF to JPEG...');
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.9
+          });
+          referenceFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          referenceFile = new File([referenceFile], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' });
+          console.log('Conversion successful. New file type:', referenceFile.type, 'New file name:', referenceFile.name);
+        } catch (conversionError) {
+          console.error('HEIC conversion failed:', conversionError);
+          // Continue with original file if conversion fails
+          referenceFile = file;
+        }
       }
 
       // Get reference face descriptor
       const imageUrl = URL.createObjectURL(referenceFile);
+      console.log('Using image URL for face detection:', imageUrl);
+      
       const descriptor = await getFaceDescriptor(imageUrl);
       setReferenceFaceDescriptor(descriptor);
       setFaceDetectionProgress('Scanning gallery for matches...');
@@ -429,7 +441,7 @@ const Gallery = () => {
         errorMessage = 'Face detection models failed to load. Please check your internet connection and try again.';
       } else if (error.message.includes('No face detected')) {
         errorMessage = 'No face detected in your photo. Please try a different photo.';
-        tips = 'Tips for better results:\n• Use a clear, front-facing photo\n• Ensure good lighting\n• Avoid sunglasses or hats\n• Make sure your face is clearly visible\n• Try a photo from a recent event';
+        tips = 'Tips for better results:\n• Use a clear, front-facing photo\n• Ensure good lighting\n• Avoid sunglasses or hats\n• Make sure your face is clearly visible\n• Try a photo from a recent event\n• If using iPhone, try taking a screenshot of your photo first';
       } else if (error.message.includes('Failed to load image')) {
         errorMessage = 'Failed to process the image. Please try a different photo format (JPG, PNG).';
       }
