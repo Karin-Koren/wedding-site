@@ -1,4 +1,3 @@
-import imageCompression from 'browser-image-compression';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import pLimit from 'p-limit';
@@ -144,10 +143,9 @@ export default function Upload() {
           useWebWorker: true,
           initialQuality: 0.7
         };
-        const compressedFile = await imageCompression(file, options);
         const thumbName = `${timestamp}_thumb_${file.name}`;
         const thumbRef = ref(storage, `thumbnails/${thumbName}`);
-        const thumbTask = uploadBytesResumable(thumbRef, compressedFile, {
+        const thumbTask = uploadBytesResumable(thumbRef, file, {
           contentType: file.type
         });
         await new Promise((resolve, reject) => {
