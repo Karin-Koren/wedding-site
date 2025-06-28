@@ -1,5 +1,6 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import heic2any from 'heic2any';
 import pLimit from 'p-limit';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -81,20 +82,33 @@ export default function Upload() {
   // Upload a single file to Firebase Storage
   const uploadFile = async (file, index) => {
     try {
+      // Convert HEIC/HEIF to JPEG if needed
+      let uploadFile = file;
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.9
+        });
+        // heic2any returns a Blob or an array of Blobs
+        uploadFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        // Rename file for storage
+        uploadFile = new File([uploadFile], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' });
+      }
       // Create a unique filename using timestamp and original name
       const timestamp = Date.now();
-      const filename = `${timestamp}_${file.name}`;
+      const filename = `${timestamp}_${uploadFile.name}`;
       
       // Create a reference to the file location in Firebase Storage
       const storageRef = ref(storage, `uploads/${filename}`);
       
       // Create upload task with metadata
       const metadata = {
-        contentType: file.type
+        contentType: uploadFile.type
       };
       
       // Upload original file
-      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+      const uploadTask = uploadBytesResumable(storageRef, uploadFile, metadata);
       // Wait for upload to complete
       await new Promise((resolve, reject) => {
         uploadTask.on(
@@ -137,16 +151,16 @@ export default function Upload() {
       const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
       let thumbURL = null;
       // If image, generate and upload thumbnail
-      if (file.type.startsWith('image/')) {
+      if (uploadFile.type.startsWith('image/')) {
         const options = {
           maxWidthOrHeight: 300,
           useWebWorker: true,
           initialQuality: 0.7
         };
-        const thumbName = `${timestamp}_thumb_${file.name}`;
+        const thumbName = `${timestamp}_thumb_${uploadFile.name}`;
         const thumbRef = ref(storage, `thumbnails/${thumbName}`);
-        const thumbTask = uploadBytesResumable(thumbRef, file, {
-          contentType: file.type
+        const thumbTask = uploadBytesResumable(thumbRef, uploadFile, {
+          contentType: uploadFile.type
         });
         await new Promise((resolve, reject) => {
           thumbTask.on('state_changed', null, reject, resolve);
@@ -157,10 +171,10 @@ export default function Upload() {
       await addDoc(collection(db, 'uploads'), {
         fullUrl: downloadURL,
         thumbUrl: thumbURL,
-        filename: file.name,
+        filename: uploadFile.name,
         uploadedAt: serverTimestamp(),
-        type: file.type,
-        size: file.size
+        type: uploadFile.type,
+        size: uploadFile.size
       });
       return downloadURL;
     } catch (error) {

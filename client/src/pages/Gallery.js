@@ -1,4 +1,5 @@
 import * as faceapi from 'face-api.js';
+import heic2any from 'heic2any';
 import React, { useCallback, useEffect, useState } from 'react';
 import './Gallery.css';
 
@@ -376,17 +377,28 @@ const Gallery = () => {
       // Load models if not already loaded
       await loadFaceAPIModels();
       setFaceDetectionProgress('Analyzing your photo...');
-      
+
+      // Convert HEIC/HEIF to JPEG if needed
+      let referenceFile = file;
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.9
+        });
+        referenceFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        referenceFile = new File([referenceFile], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' });
+      }
+
       // Get reference face descriptor
-      const imageUrl = URL.createObjectURL(file);
+      const imageUrl = URL.createObjectURL(referenceFile);
       const descriptor = await getFaceDescriptor(imageUrl);
       setReferenceFaceDescriptor(descriptor);
-      
       setFaceDetectionProgress('Scanning gallery for matches...');
-      
+
       // Find matches in gallery
       const matches = await findMatchingFaces(descriptor, images);
-      
+
       setFaceDetectionResults({
         totalImages: images.length,
         matches: matches,
@@ -394,7 +406,7 @@ const Gallery = () => {
           ? `We found ${matches.length} photos with your face!` 
           : 'No matches found. Try uploading a clearer photo of yourself.'
       });
-      
+
       // Filter gallery to show only matches
       if (matches.length > 0) {
         const matchedImages = matches.map(match => match.image);
@@ -402,7 +414,7 @@ const Gallery = () => {
       } else {
         setFilteredImages([]);
       }
-      
+
       URL.revokeObjectURL(imageUrl);
     } catch (error) {
       console.error('Face detection error:', error);
