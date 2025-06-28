@@ -235,6 +235,319 @@
   text-align: center;
 }
 
+/* Face Detection Styles */
+.find-me-button {
+  padding: 0.8rem 1.5rem;
+  background-color: var(--sage-green);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: auto;
+}
+
+.find-me-button:hover:not(:disabled) {
+  background-color: #9BAF8D;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.find-me-button:disabled {
+  background-color: var(--light-sage);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.face-detection-results {
+  background: var(--cream);
+  border: 1px solid var(--light-sage);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.results-message {
+  font-size: 1.1rem;
+  color: var(--sage-green);
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.results-stats {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  margin: 0 0 1rem 0;
+  opacity: 0.8;
+}
+
+.clear-filter-button {
+  padding: 0.6rem 1.2rem;
+  background-color: var(--light-sage);
+  color: var(--sage-green);
+  border: 2px solid var(--sage-green);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-filter-button:hover {
+  background-color: var(--sage-green);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.face-upload-modal {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+  box-shadow: var(--shadow-medium);
+}
+
+.face-upload-modal h2 {
+  color: var(--sage-green);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.face-upload-modal p {
+  color: var(--text-dark);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.face-upload-input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px dashed var(--light-sage);
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.face-upload-input:hover {
+  border-color: var(--sage-green);
+  background-color: var(--cream);
+}
+
+.upload-tip {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.upload-guidelines {
+  background: var(--cream);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+  border-left: 4px solid var(--sage-green);
+}
+
+.upload-guidelines h3 {
+  color: var(--sage-green);
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.upload-guidelines ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.upload-guidelines li {
+  color: var(--text-dark);
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.upload-guidelines li:last-child {
+  margin-bottom: 0;
+}
+
+.sensitivity-control {
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.sensitivity-control label {
+  display: block;
+  color: var(--sage-green);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.sensitivity-value {
+  color: var(--text-dark);
+  font-weight: bold;
+}
+
+.sensitivity-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--light-sage);
+  outline: none;
+  margin: 0.5rem 0;
+  -webkit-appearance: none;
+}
+
+.sensitivity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sage-green);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+.sensitivity-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sage-green);
+  cursor: pointer;
+  border: none;
+  box-shadow: var(--shadow-soft);
+}
+
+.sensitivity-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+.sensitivity-tip {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.results-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.retry-button {
+  padding: 0.6rem 1.2rem;
+  background-color: var(--sage-green);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  background-color: #9BAF8D;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.results-details {
+  margin: 1rem 0;
+}
+
+.similarity-scores {
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.similarity-scores h4 {
+  color: var(--sage-green);
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.score-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.score-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.score-label {
+  min-width: 80px;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.score-bar-container {
+  flex: 1;
+  height: 8px;
+  background: var(--light-sage);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sage-green), #9BAF8D);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.score-value {
+  min-width: 50px;
+  color: var(--sage-green);
+  font-weight: bold;
+  text-align: right;
+}
+
+/* Loading spinner for face detection */
+.face-detection-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--sage-green);
+  font-weight: 500;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--light-sage);
+  border-top: 2px solid var(--sage-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .gallery-page {
@@ -304,6 +617,25 @@
 
   .modal-nav-next {
     right: 0.5rem;
+  }
+
+  .gallery-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .find-me-button {
+    margin-right: 0;
+    order: -1;
+  }
+  
+  .face-upload-modal {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .face-upload-modal h2 {
+    font-size: 1.3rem;
   }
 }
 
