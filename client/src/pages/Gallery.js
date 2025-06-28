@@ -1,3 +1,4 @@
+import exifr from 'exifr';
 import * as faceapi from 'face-api.js';
 import heic2any from 'heic2any';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -21,7 +22,7 @@ const Gallery = () => {
   const [referenceFaceDescriptor, setReferenceFaceDescriptor] = useState(null);
   const [faceDetectionProgress, setFaceDetectionProgress] = useState('');
   const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [sensitivity, setSensitivity] = useState(0.3); // Lowered default sensitivity for better detection
+  const [sensitivity, setSensitivity] = useState(0.25); // Lowered default sensitivity for better detection
   const [faceDetectionCache, setFaceDetectionCache] = useState(new Map()); // Cache for face descriptors
 
   // Minimum swipe distance (in px)
@@ -272,7 +273,7 @@ const Gallery = () => {
                   const tinyDetections = await faceapi
                     .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ 
                       inputSize: 224, // Larger input size for better detection
-                      scoreThreshold: 0.2 // Even lower threshold for better detection
+                      scoreThreshold: 0.1 // Even lower threshold for better detection
                     }))
                     .withFaceLandmarks()
                     .withFaceDescriptors();
@@ -285,7 +286,7 @@ const Gallery = () => {
                 try {
                   const ssdDetections = await faceapi
                     .detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ 
-                      minConfidence: 0.2 // Lower confidence threshold
+                      minConfidence: 0.1 // Lower confidence threshold
                     }))
                     .withFaceLandmarks()
                     .withFaceDescriptors();
@@ -403,9 +404,24 @@ const Gallery = () => {
         conversionInfo = `File type: ${file.type}. `;
       }
 
+      // Fix image orientation (especially for iPhone camera photos)
+      setFaceDetectionProgress('Fixing image orientation...');
+      referenceFile = await fixImageOrientation(referenceFile);
+      conversionInfo += `Orientation fixed. `;
+
       // Get reference face descriptor
       const imageUrl = URL.createObjectURL(referenceFile);
       setFaceDetectionProgress('Detecting faces in your photo...');
+      
+      // Add more debugging info
+      conversionInfo += `File size: ${(referenceFile.size / 1024).toFixed(1)}KB. `;
+      
+      // Get image dimensions for debugging
+      const img = new Image();
+      img.onload = () => {
+        conversionInfo += `Dimensions: ${img.width}x${img.height}px. `;
+      };
+      img.src = imageUrl;
       
       const descriptor = await getFaceDescriptor(imageUrl);
       setReferenceFaceDescriptor(descriptor);
@@ -444,7 +460,7 @@ const Gallery = () => {
         errorMessage = 'Face detection models failed to load. Please check your internet connection and try again.';
       } else if (error.message.includes('No face detected')) {
         errorMessage = `No face detected in your photo. ${conversionInfo || ''}Please try a different photo.`;
-        tips = 'Tips for better results:\n• Use a clear, front-facing photo\n• Ensure good lighting\n• Avoid sunglasses or hats\n• Make sure your face is clearly visible\n• Try a photo from a recent event\n• If using iPhone, try taking a screenshot of your photo first\n• File info: ' + (conversionInfo || `Type: ${file.type}, Name: ${file.name}`);
+        tips = 'Tips for better results:\n• Use a clear, front-facing photo\n• Ensure good lighting\n• Avoid sunglasses or hats\n• Make sure your face is clearly visible\n• Try a photo from a recent event\n• If using iPhone, try taking a screenshot of your photo first\n• File info: ' + (conversionInfo || `Type: ${file.type}, Name: ${file.name}, Size: ${(file.size / 1024).toFixed(1)}KB`);
       } else if (error.message.includes('Failed to load image')) {
         errorMessage = 'Failed to process the image. Please try a different photo format (JPG, PNG).';
       }
@@ -471,6 +487,60 @@ const Gallery = () => {
   const clearFaceDetectionCache = () => {
     setFaceDetectionCache(new Map());
     console.log('Face detection cache cleared');
+  };
+
+  // Function to fix image orientation
+  const fixImageOrientation = async (file) => {
+    try {
+      // Read EXIF data
+      const exifData = await exifr.parse(file);
+      
+      if (exifData && exifData.Orientation) {
+        // Create canvas to fix orientation
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        return new Promise((resolve) => {
+          img.onload = () => {
+            // Set canvas size based on orientation
+            if (exifData.Orientation > 4 && exifData.Orientation < 9) {
+              canvas.width = img.height;
+              canvas.height = img.width;
+            } else {
+              canvas.width = img.width;
+              canvas.height = img.height;
+            }
+            
+            // Apply orientation transform
+            switch (exifData.Orientation) {
+              case 2: ctx.transform(-1, 0, 0, 1, img.width, 0); break;
+              case 3: ctx.transform(-1, 0, 0, -1, img.width, img.height); break;
+              case 4: ctx.transform(1, 0, 0, -1, 0, img.height); break;
+              case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+              case 6: ctx.transform(0, 1, -1, 0, img.height, 0); break;
+              case 7: ctx.transform(0, -1, -1, 0, img.height, img.width); break;
+              case 8: ctx.transform(0, -1, 1, 0, 0, img.width); break;
+              default: break;
+            }
+            
+            ctx.drawImage(img, 0, 0);
+            
+            // Convert canvas to blob
+            canvas.toBlob((blob) => {
+              const fixedFile = new File([blob], file.name, { type: file.type });
+              resolve(fixedFile);
+            }, file.type, 0.9);
+          };
+          img.src = URL.createObjectURL(file);
+        });
+      }
+      
+      return file; // Return original if no orientation fix needed
+    } catch (error) {
+      console.log('Orientation fix failed, using original file:', error);
+      return file;
+    }
   };
 
   if (loading) {
