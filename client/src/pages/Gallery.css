@@ -284,6 +284,28 @@
   opacity: 0.8;
 }
 
+.file-info {
+  background: var(--light-sage);
+  padding: 0.8rem;
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.file-info h4 {
+  color: var(--sage-green);
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.file-details {
+  font-size: 0.8rem;
+  color: var(--text-dark);
+  margin: 0;
+  line-height: 1.4;
+  font-family: monospace;
+}
+
 .clear-filter-button {
   padding: 0.6rem 1.2rem;
   background-color: var(--light-sage);

@@ -216,17 +216,49 @@ const Gallery = () => {
     return new Promise((resolve, reject) => {
       img.onload = async () => {
         try {
-          const detection = await faceapi
-            .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
+          console.log('Attempting face detection on image:', img.width, 'x', img.height);
+          
+          // Try multiple detection methods with very lenient settings
+          let detection = null;
+          
+          // Method 1: TinyFaceDetector with very low threshold
+          try {
+            detection = await faceapi
+              .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ 
+                inputSize: 512, // Larger input size
+                scoreThreshold: 0.05 // Very low threshold
+              }))
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+            console.log('TinyFaceDetector succeeded');
+          } catch (e) {
+            console.log('TinyFaceDetector failed:', e.message);
+          }
+          
+          // Method 2: SsdMobilenetv1 if first method failed
+          if (!detection) {
+            try {
+              detection = await faceapi
+                .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ 
+                  minConfidence: 0.05 // Very low confidence
+                }))
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+              console.log('SsdMobilenetv1 succeeded');
+            } catch (e) {
+              console.log('SsdMobilenetv1 failed:', e.message);
+            }
+          }
           
           if (detection) {
+            console.log('Face detected successfully');
             resolve(detection.descriptor);
           } else {
+            console.log('No face detected with any method');
             reject(new Error('No face detected in the image'));
           }
         } catch (error) {
+          console.error('Face detection error:', error);
           reject(error);
         }
       };
@@ -420,6 +452,10 @@ const Gallery = () => {
       const img = new Image();
       img.onload = () => {
         conversionInfo += `Dimensions: ${img.width}x${img.height}px. `;
+        console.log('Image loaded successfully:', img.width, 'x', img.height);
+      };
+      img.onerror = () => {
+        console.error('Failed to load image for dimension check');
       };
       img.src = imageUrl;
       
@@ -435,7 +471,8 @@ const Gallery = () => {
         matches: matches,
         message: matches.length > 0 
           ? `We found ${matches.length} photos with your face!` 
-          : 'No matches found. Try uploading a clearer photo of yourself.'
+          : 'No matches found. Try uploading a clearer photo of yourself.',
+        fileInfo: conversionInfo // Add file info to results
       });
 
       // Filter gallery to show only matches
@@ -575,6 +612,15 @@ const Gallery = () => {
         {faceDetectionResults && (
           <div className="face-detection-results">
             <p className="results-message">{faceDetectionResults.message}</p>
+            
+            {/* Show file information for both success and failure cases */}
+            {faceDetectionResults.fileInfo && (
+              <div className="file-info">
+                <h4>File Information:</h4>
+                <p className="file-details">{faceDetectionResults.fileInfo}</p>
+              </div>
+            )}
+            
             {faceDetectionResults.matches.length > 0 && (
               <div className="results-details">
                 <p className="results-stats">
